@@ -48,6 +48,7 @@ namespace CabbageCrow.AssemblyPublicizer
 	class AssemblyPublicizer
 	{
 		static bool automaticExit, help;
+                static string searchPath = null;
 
 		static void Main(string[] args)
 		{
@@ -62,6 +63,7 @@ namespace CabbageCrow.AssemblyPublicizer
 				{ "i|input=", "Path (relative or absolute) to the input assembly", i => input = i }, 
 				{ "o|output=", "Path/dir/filename for the output assembly", o => output = o }, 
 				{ "e|exit", "Application should automatically exit", e => automaticExit = e != null}, 
+				{ "p|path=", "Path to search for dependencies", p => searchPath = p},
 				{ "h|help", "Show this message", h => help = h != null}
 			};
 
@@ -125,11 +127,32 @@ namespace CabbageCrow.AssemblyPublicizer
 
 			try
 			{
-				assembly = AssemblyDefinition.ReadAssembly(inputFile);
+				if (searchPath != null)
+				{
+                                        Console.WriteLine();
+					Console.WriteLine("using search path");
+					string targetDir = Path.GetDirectoryName(inputFile);
+					var resolver = new DefaultAssemblyResolver();
+					resolver.AddSearchDirectory(searchPath);
+					resolver.AddSearchDirectory(targetDir);
+					foreach (var l in resolver.GetSearchDirectories())
+					{
+						Console.WriteLine("Searching: " + l);
+					}
+
+
+					assembly = AssemblyDefinition.ReadAssembly(
+						inputFile,
+						new ReaderParameters {AssemblyResolver = resolver, ReadingMode = ReadingMode.Immediate});
+				}
+				else
+				{
+					assembly = AssemblyDefinition.ReadAssembly(inputFile);
+				}
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
-				Console.WriteLine();
+				Console.WriteLine("\n" + e);
 				Console.WriteLine("ERROR! Cannot read the assembly. Please check your permissions.");
 				Exit(40);
 			}
@@ -208,9 +231,9 @@ namespace CabbageCrow.AssemblyPublicizer
 					Directory.CreateDirectory(outputPath);
 				assembly.Write(outputFile);
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
-				Console.WriteLine();
+				Console.WriteLine("\n" + e);
 				Console.WriteLine("ERROR! Cannot create/overwrite the new assembly. ");
 				Console.WriteLine("Please check the path and its permissions " +
 					"and in case of overwriting an existing file ensure that it isn't currently used.");
