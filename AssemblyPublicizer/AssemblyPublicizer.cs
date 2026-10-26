@@ -126,7 +126,7 @@ class AssemblyPublicizer
         
         try
         {
-            if (searchPath.Count > 0)
+            if (searchPaths.Count > 0)
             {
                 var resolver = new DefaultAssemblyResolver();
                 string targetDir = Path.GetDirectoryName(inputFile);
